@@ -186,19 +186,22 @@ function showToast(msg){
 async function addUser(e){
     e.preventDefault();
     const f=new FormData(e.target);
-    const r=await fetch('/user/add',{method:'POST',body:f});
+    const r=await fetch('/user/add',{method:'POST',body:f,headers:{'X-Requested-With':'XMLHttpRequest'}});
+    if(r.status===401){window.location='/login';return;}
     const d=await r.json();
     if(d.success){showToast('User added!');setTimeout(()=>location.reload(),500);}
     else alert(d.error);
 }
 async function deleteUser(id,name){
     if(!confirm('Delete user "'+name+'"?'))return;
-    const r=await fetch('/user/'+id+'/delete',{method:'POST'});
+    const r=await fetch('/user/'+id+'/delete',{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest'}});
+    if(r.status===401){window.location='/login';return;}
     const d=await r.json();
     if(d.success){showToast('Deleted!');document.getElementById('user-'+id).remove();}
 }
 async function toggleUser(id){
-    const r=await fetch('/user/'+id+'/toggle',{method:'POST'});
+    const r=await fetch('/user/'+id+'/toggle',{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest'}});
+    if(r.status===401){window.location='/login';return;}
     const d=await r.json();
     if(d.success)location.reload();
 }

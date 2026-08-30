@@ -10,7 +10,9 @@ from flask import Flask, request, jsonify, render_template, redirect, url_for, s
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "nighti-vpn-panel-secret-2026")
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False
+app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['PREFERRED_URL_SCHEME'] = 'https'
 
 # ============ CONFIG ============
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
@@ -90,6 +92,8 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not session.get("logged_in"):
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+                return jsonify({"error": "Session expired. Please login again."}), 401
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated
