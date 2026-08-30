@@ -25,7 +25,8 @@ SERVER_IP = os.environ.get("SERVER_IP", "")
 DB_PATH = os.environ.get("DB_PATH", "vpn_panel.db")
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10, check_same_thread=False)
+    conn.execute("PRAGMA journal_mode=WAL")
     conn.row_factory = sqlite3.Row
     return conn
 
