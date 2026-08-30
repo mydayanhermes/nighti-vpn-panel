@@ -305,7 +305,4 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     app.run(host="0.0.0.0", port=port, debug=False)
 
-@app.route("/debug-port")
-def debug_port():
-    import os
-    return f"PORT={os.environ.get('PORT','NOT SET')}"
+
