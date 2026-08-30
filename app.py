@@ -154,9 +154,9 @@ def add_user():
     expire_date = (datetime.now() + timedelta(days=expire_days)).strftime("%Y-%m-%d")
     traffic_limit = traffic_gb * 1024 * 1024 * 1024
     
-    server_ip = get_setting("server_ip") or "127.0.0.1"
-    sni = get_setting("vless_sni") or server_ip
-    path = get_setting("vless_path") or "/ws"
+    server_ip = os.environ.get("SERVER_IP") or get_setting("server_ip") or "127.0.0.1"
+    sni = os.environ.get("vless_sni") or get_setting("vless_sni") or server_ip
+    path = os.environ.get("vless_path") if os.environ.get("vless_path") is not None else get_setting("vless_path") or ""
     
     if protocol == "trojan":
         config = f"trojan://{user_uuid}@{server_ip}:443?security=tls&type=ws&path={path}&host={sni}&sni={sni}#{username}"
