@@ -438,3 +438,4 @@ def user_subscription(sub_token):
 def sub_link(sub_token):
     base = request.host_url.rstrip("/")
     return jsonify({"url": f"{base}/api/sub/{sub_token}"})
+# 1788098800
