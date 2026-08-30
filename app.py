@@ -92,8 +92,6 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not session.get("logged_in"):
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
-                return jsonify({"error": "Session expired. Please login again."}), 401
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated
@@ -126,10 +124,17 @@ def dashboard():
     expired = sum(1 for u in users if u["expire_date"] and datetime.strptime(u["expire_date"], "%Y-%m-%d") < datetime.now())
     total_traffic = sum(u["traffic_used"] for u in users)
     conn.close()
+    config_to_show = None
+    if request.args.get("config_username"):
+        config_to_show = {
+            "username": request.args.get("config_username"),
+            "config": request.args.get("config_config"),
+            "sub_token": request.args.get("config_sub_token")
+        }
     return render_template("dashboard.html",
         users=users, total=total, active=active, expired=expired,
         total_traffic=total_traffic, panel_name=get_setting("panel_name"),
-        now=datetime.now()
+        now=datetime.now(), config_to_show=config_to_show
     )
 
 # ============ USER MANAGEMENT ============
@@ -140,28 +145,37 @@ def add_user():
     protocol = request.form.get("protocol", "vless")
     traffic_gb = int(request.form.get("traffic_limit", 50))
     expire_days = int(request.form.get("expire_days", 30))
-    note = request.form.get("note", "")
     
     if not username:
-        return jsonify({"error": "Username required"}), 400
+        return redirect(url_for("dashboard"))
     
     user_uuid = str(uuid.uuid4())
     sub_token = secrets.token_urlsafe(16)
     expire_date = (datetime.now() + timedelta(days=expire_days)).strftime("%Y-%m-%d")
-    traffic_limit = traffic_gb * 1024 * 1024 * 1024  # GB to bytes
+    traffic_limit = traffic_gb * 1024 * 1024 * 1024
+    
+    server_ip = get_setting("server_ip") or "127.0.0.1"
+    sni = get_setting("vless_sni") or server_ip
+    path = get_setting("vless_path") or "/ws"
+    
+    if protocol == "trojan":
+        config = f"trojan://{user_uuid}@{server_ip}:443?security=tls&type=ws&path={path}&host={sni}&sni={sni}#{username}"
+    else:
+        config = f"vless://{user_uuid}@{server_ip}:443?encryption=none&security=tls&sni={sni}&fp=chrome&type=ws&path={path}&host={sni}#{username}"
     
     try:
         conn = get_db()
         conn.execute(
             "INSERT INTO users (username, uuid, protocol, traffic_limit, expire_date, note, sub_token) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (username, user_uuid, protocol, traffic_limit, expire_date, note, sub_token)
+            (username, user_uuid, protocol, traffic_limit, expire_date, "", sub_token)
         )
         conn.commit()
         conn.close()
         log_action("add_user", f"Added user: {username}")
-        return jsonify({"success": True, "uuid": user_uuid, "sub_token": sub_token})
     except sqlite3.IntegrityError:
-        return jsonify({"error": "Username already exists"}), 400
+        pass
+    
+    return redirect(url_for("dashboard", config_username=username, config_config=config, config_sub_token=sub_token))
 
 @app.route("/user/<int:user_id>/delete", methods=["POST"])
 @login_required
@@ -173,7 +187,7 @@ def delete_user(user_id):
         conn.commit()
         log_action("delete_user", f"Deleted user: {user['username']}")
     conn.close()
-    return jsonify({"success": True})
+    return redirect(url_for("dashboard"))
 
 @app.route("/user/<int:user_id>/toggle", methods=["POST"])
 @login_required
@@ -184,7 +198,7 @@ def toggle_user(user_id):
     user = conn.execute("SELECT username, enabled FROM users WHERE id=?", (user_id,)).fetchone()
     log_action("toggle_user", f"{'Enabled' if user['enabled'] else 'Disabled'} user: {user['username']}")
     conn.close()
-    return jsonify({"success": True})
+    return redirect(url_for("dashboard"))
 
 @app.route("/user/<int:user_id>/reset", methods=["POST"])
 @login_required
