@@ -430,7 +430,7 @@ def user_subscription(sub_token):
 
     if not lines:
         return "No inbounds available", 404
-    return "\n".join(lines), 200, {"Content-Type": "text/plain; charset=utf-8", "Content-Disposition": f'attachment; filename="{username}_sub.txt"'}
+    return "\n".join(lines), 200, {"Content-Type": "text/plain; charset=utf-8; profile=https://raw.githubusercontent.com/v2ray/v2ray-core/master/v2ray-core/v2ray/config/protobuf/app/proxyman/command/command.proto"}
 
 # ============ SUB URL ON DASHBOARD ============
 @app.route("/api/sub/link/<sub_token>")
