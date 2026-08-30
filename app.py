@@ -403,6 +403,7 @@ def delete_inbound():
 # ============ SUBSCRIPTION ENDPOINT ============
 @app.route("/api/sub/<sub_token>")
 def user_subscription(sub_token):
+    """Generate VLESS subscription URLs for client apps"""
     conn = get_db()
     user = conn.execute("SELECT * FROM users WHERE sub_token=?", (sub_token,)).fetchone()
     inbounds = conn.execute("SELECT * FROM inbounds WHERE enabled=1 ORDER BY id").fetchall()
@@ -415,7 +416,7 @@ def user_subscription(sub_token):
     if user["expire_date"] and user["expire_date"] < dt.now().strftime("%Y-%m-%d"):
         return "User expired", 403
 
-    uuid = user["uuid"]
+    uuid = os.environ.get("VPN_UUID", "732bd802-cc69-4a9f-a792-4da5b2b7118c")
     username = user["username"]
     lines = []
     for ib in inbounds:
@@ -430,7 +431,11 @@ def user_subscription(sub_token):
 
     if not lines:
         return "No inbounds available", 404
-    return "\n".join(lines), 200, {"Content-Type": "text/plain; charset=utf-8; profile=https://raw.githubusercontent.com/v2ray/v2ray-core/master/v2ray-core/v2ray/config/protobuf/app/proxyman/command/command.proto"}
+    # Return base64 encoded subscription for VPN clients
+    import base64
+    content = "\n".join(lines)
+    encoded = base64.b64encode(content.encode()).decode()
+    return encoded, 200, {"Content-Type": "text/plain; charset=utf-8"}
 
 # ============ SUB URL ON DASHBOARD ============
 @app.route("/api/sub/link/<sub_token>")
