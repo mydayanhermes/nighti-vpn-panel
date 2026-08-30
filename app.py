@@ -8,7 +8,9 @@ from functools import wraps
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session, Response
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
+app.secret_key = os.environ.get("SECRET_KEY", "nighti-vpn-panel-secret-2026")
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = False
 
 # ============ CONFIG ============
 ADMIN_USER = os.environ.get("ADMIN_USER", "admin")
