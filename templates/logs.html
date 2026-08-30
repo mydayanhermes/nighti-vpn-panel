@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ panel_name }} - Logs</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0a;--card:rgba(255,255,255,0.05);--border:rgba(255,255,255,0.1);--accent:#00d4ff}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:#fff;min-height:100vh}
+.navbar{background:rgba(0,0,0,0.5);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;backdrop-filter:blur(10px);position:sticky;top:0;z-index:100}
+.navbar h2{font-size:18px;color:var(--accent)}
+.navbar .links{display:flex;gap:16px;align-items:center}
+.navbar a{color:#aaa;text-decoration:none;font-size:14px;transition:0.2s}
+.navbar a:hover,.navbar a.active{color:var(--accent)}
+.container{max-width:800px;margin:0 auto;padding:20px}
+.section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px}
+.section h3{margin-bottom:16px;color:#ccc;font-size:16px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;text-align:right;border-bottom:1px solid var(--border);font-size:13px}
+th{color:#888}
+.log-action{color:var(--accent);font-weight:500}
+</style>
+</head>
+<body>
+<nav class="navbar">
+<h2>🛡️ {{ panel_name }}</h2>
+<div class="links">
+<a href="/">Dashboard</a>
+<a href="/settings">Settings</a>
+<a href="/logs" class="active">Logs</a>
+<a href="/logout">Logout</a>
+</div>
+</nav>
+<div class="container">
+<div class="section">
+<h3>📜 Activity Logs</h3>
+<table>
+<thead><tr><th>#</th><th>Action</th><th>Details</th><th>Time</th></tr></thead>
+<tbody>
+{% for log in logs %}
+<tr>
+<td>{{ loop.index }}</td>
+<td class="log-action">{{ log.action }}</td>
+<td>{{ log.details or '-' }}</td>
+<td>{{ log.created_at }}</td>
+</tr>
+{% endfor %}
+{% if not logs %}
+<tr><td colspan="4" style="text-align:center;color:#666;padding:30px">No logs yet</td></tr>
+{% endif %}
+</tbody>
+</table>
+</div>
+</div>
+</body>
+</html>

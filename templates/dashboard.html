@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ panel_name }} - Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0a;--card:rgba(255,255,255,0.05);--border:rgba(255,255,255,0.1);--accent:#00d4ff;--green:#00e676;--red:#ff5252;--orange:#ffab40}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:#fff;min-height:100vh}
+.navbar{background:rgba(0,0,0,0.5);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;backdrop-filter:blur(10px);position:sticky;top:0;z-index:100}
+.navbar h2{font-size:18px;color:var(--accent)}
+.navbar .links{display:flex;gap:16px;align-items:center}
+.navbar a{color:#aaa;text-decoration:none;font-size:14px;transition:0.2s}
+.navbar a:hover,.navbar a.active{color:var(--accent)}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center;transition:0.3s}
+.stat-card:hover{border-color:var(--accent);transform:translateY(-2px)}
+.stat-card .num{font-size:32px;font-weight:700;color:var(--accent)}
+.stat-card .label{color:#888;font-size:13px;margin-top:4px}
+.section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:24px}
+.section h3{margin-bottom:16px;color:#ccc;font-size:16px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:12px;text-align:right;border-bottom:1px solid var(--border);font-size:13px}
+th{color:#888;font-weight:500}
+tr:hover{background:rgba(255,255,255,0.02)}
+.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge.active{background:rgba(0,230,118,0.15);color:var(--green)}
+.badge.disabled{background:rgba(255,82,82,0.15);color:var(--red)}
+.badge.expired{background:rgba(255,171,64,0.15);color:var(--orange)}
+.btn{padding:6px 14px;border:none;border-radius:8px;font-size:12px;cursor:pointer;transition:0.2s;font-weight:500}
+.btn-primary{background:var(--accent);color:#000}
+.btn-danger{background:rgba(255,82,82,0.2);color:var(--red);border:1px solid rgba(255,82,82,0.3)}
+.btn-success{background:rgba(0,230,118,0.2);color:var(--green);border:1px solid rgba(0,230,118,0.3)}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn:hover{transform:scale(1.05)}
+.add-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.add-form input,.add-form select{padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,0.05);color:#fff;font-size:13px;outline:none}
+.add-form input:focus{border-color:var(--accent)}
+.uuid-cell{font-family:monospace;font-size:11px;color:#666;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.uuid-cell:hover{color:var(--accent);white-space:normal}
+.sub-link{color:var(--accent);text-decoration:none;font-size:12px}
+.actions{display:flex;gap:6px}
+.traffic-bar{width:100px;height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden}
+.traffic-bar .fill{height:100%;border-radius:3px;background:var(--accent);transition:0.3s}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--green);color:#000;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:600;z-index:1000;display:none}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex}
+.modal{background:#1a1a2e;border:1px solid var(--border);border-radius:16px;padding:24px;width:400px;max-width:90%}
+.modal h3{margin-bottom:16px;color:var(--accent)}
+.modal .config-box{background:#000;padding:12px;border-radius:8px;font-family:monospace;font-size:12px;color:var(--green);word-break:break-all;max-height:200px;overflow-y:auto;direction:ltr;text-align:left}
+.modal .copy-btn{margin-top:12px}
+</style>
+</head>
+<body>
+<nav class="navbar">
+<h2>🛡️ {{ panel_name }}</h2>
+<div class="links">
+<a href="/" class="active">Dashboard</a>
+<a href="/settings">Settings</a>
+<a href="/logs">Logs</a>
+<a href="/logout">Logout</a>
+</div>
+</nav>
+<div class="container">
+<!-- Stats -->
+<div class="stats">
+<div class="stat-card">
+<div class="num">{{ total }}</div>
+<div class="label">Total Users</div>
+</div>
+<div class="stat-card">
+<div class="num" style="color:var(--green)">{{ active }}</div>
+<div class="label">Active</div>
+</div>
+<div class="stat-card">
+<div class="num" style="color:var(--red)">{{ total - active }}</div>
+<div class="label">Disabled</div>
+</div>
+<div class="stat-card">
+<div class="num" style="color:var(--orange)">{{ expired }}</div>
+<div class="label">Expired</div>
+</div>
+</div>
+
+<!-- Add User -->
+<div class="section">
+<h3>➕ Add New User</h3>
+<form id="addForm" class="add-form" onsubmit="addUser(event)">
+<input type="text" name="username" placeholder="Username" required>
+<select name="protocol">
+<option value="vless">VLESS</option>
+<option value="trojan">Trojan</option>
+</select>
+<input type="number" name="traffic_limit" placeholder="Traffic (GB)" value="50">
+<input type="number" name="expire_days" placeholder="Days" value="30">
+<input type="text" name="note" placeholder="Note (optional)">
+<button type="submit" class="btn btn-primary">➕ Add User</button>
+</form>
+</div>
+
+<!-- Users Table -->
+<div class="section">
+<h3>👥 Users ({{ total }})</h3>
+<div style="overflow-x:auto">
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Username</th>
+<th>Protocol</th>
+<th>UUID</th>
+<th>Traffic</th>
+<th>Expire</th>
+<th>Status</th>
+<th>Subscription</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody>
+{% for user in users %}
+<tr id="user-{{ user.id }}">
+<td>{{ loop.index }}</td>
+<td><strong>{{ user.username }}</strong>
+{% if user.note %}<br><small style="color:#666">{{ user.note }}</small>{% endif %}
+</td>
+<td>{{ user.protocol|upper }}</td>
+<td class="uuid-cell" title="{{ user.uuid }}">{{ user.uuid[:16] }}...</td>
+<td>
+{% set usage_gb = (user.traffic_used / 1073741824)|round(1) %}
+{% set limit_gb = (user.traffic_limit / 1073741824)|round(0)|int %}
+{% set pct = ((user.traffic_used / user.traffic_limit * 100) if user.traffic_limit > 0 else 0)|round(0)|int %}
+<div>{{ usage_gb }} / {{ limit_gb }} GB</div>
+<div class="traffic-bar"><div class="fill" style="width:{{ pct }}%;background:{% if pct > 90 %}var(--red){% elif pct > 70 %}var(--orange){% else %}var(--accent){% endif %}"></div></div>
+</td>
+<td>{{ user.expire_date or '∞' }}</td>
+<td>
+{% set is_expired = user.expire_date and user.expire_date < now.strftime('%Y-%m-%d') %}
+{% if not user.enabled %}
+<span class="badge disabled">Disabled</span>
+{% elif is_expired %}
+<span class="badge expired">Expired</span>
+{% else %}
+<span class="badge active">Active</span>
+{% endif %}
+</td>
+<td>
+<a href="/sub/{{ user.sub_token }}" class="sub-link" target="_blank">📋 Sub Link</a><br>
+<a href="/config/{{ user.sub_token }}" class="sub-link" target="_blank">⬇ Config</a>
+</td>
+<td class="actions">
+<button class="btn btn-sm btn-success" onclick="toggleUser({{ user.id }})">{% if user.enabled %}Disable{% else %}Enable{% endif %}</button>
+<button class="btn btn-sm btn-primary" onclick="showConfig('{{ user.sub_token }}')">View</button>
+<button class="btn btn-sm btn-danger" onclick="deleteUser({{ user.id }},'{{ user.username }}')">Delete</button>
+</td>
+</tr>
+{% endfor %}
+{% if not users %}
+<tr><td colspan="9" style="text-align:center;color:#666;padding:40px">No users yet. Add one above!</td></tr>
+{% endif %}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+
+<!-- Config Modal -->
+<div class="modal-overlay" id="configModal">
+<div class="modal">
+<h3>📋 Config</h3>
+<div class="config-box" id="configContent"></div>
+<button class="btn btn-primary copy-btn" onclick="copyConfig()">📋 Copy</button>
+<button class="btn btn-danger copy-btn" onclick="closeModal()" style="margin-right:8px">Close</button>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function showToast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg;t.style.display='block';
+    setTimeout(()=>t.style.display='none',2500);
+}
+async function addUser(e){
+    e.preventDefault();
+    const f=new FormData(e.target);
+    const r=await fetch('/user/add',{method:'POST',body:f});
+    const d=await r.json();
+    if(d.success){showToast('User added!');setTimeout(()=>location.reload(),500);}
+    else alert(d.error);
+}
+async function deleteUser(id,name){
+    if(!confirm('Delete user "'+name+'"?'))return;
+    const r=await fetch('/user/'+id+'/delete',{method:'POST'});
+    const d=await r.json();
+    if(d.success){showToast('Deleted!');document.getElementById('user-'+id).remove();}
+}
+async function toggleUser(id){
+    const r=await fetch('/user/'+id+'/toggle',{method:'POST'});
+    const d=await r.json();
+    if(d.success)location.reload();
+}
+async function showConfig(token){
+    const r=await fetch('/config/'+token);
+    const t=await r.text();
+    document.getElementById('configContent').textContent=t;
+    document.getElementById('configModal').classList.add('active');
+}
+function copyConfig(){
+    navigator.clipboard.writeText(document.getElementById('configContent').textContent);
+    showToast('Copied!');
+}
+function closeModal(){document.getElementById('configModal').classList.remove('active');}
+document.getElementById('configModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+</script>
+</body>
+</html>
