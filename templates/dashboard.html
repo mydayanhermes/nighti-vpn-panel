@@ -6,117 +6,163 @@
 <title>{{ panel_name }}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0a0a0a;--card:rgba(255,255,255,0.05);--border:rgba(255,255,255,0.1);--accent:#00d4ff;--green:#00e676;--red:#ff5252;--orange:#ffab40}
-body{font-family:'Segoe UI',Tahoma,sans-serif;background:var(--bg);color:#fff;min-height:100vh}
-.navbar{background:rgba(0,0,0,0.5);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
-.navbar h2{font-size:18px;color:var(--accent)}
-.navbar .links{display:flex;gap:16px;align-items:center}
-.navbar a{color:#aaa;text-decoration:none;font-size:14px}
-.navbar a:hover,.navbar a.active{color:var(--accent)}
-.container{max-width:1200px;margin:0 auto;padding:20px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;margin-bottom:24px}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px;text-align:center}
-.stat-card .num{font-size:32px;font-weight:700;color:var(--accent)}
-.stat-card .label{color:#888;font-size:13px;margin-top:4px}
-.section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:24px}
-.section h3{margin-bottom:16px;color:#ccc}
-table{width:100%;border-collapse:collapse}
-th,td{padding:10px;text-align:right;border-bottom:1px solid var(--border);font-size:13px}
-th{color:#888}
-.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600}
-.badge.active{background:rgba(0,230,118,0.15);color:var(--green)}
-.badge.disabled{background:rgba(255,82,82,0.15);color:var(--red)}
-.btn{padding:6px 14px;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-weight:500;color:#fff}
-.btn-primary{background:var(--accent);color:#000}
-.btn-danger{background:rgba(255,82,82,0.2);color:var(--red);border:1px solid rgba(255,82,82,0.3)}
-.btn-success{background:rgba(0,230,118,0.2);color:var(--green);border:1px solid rgba(0,230,118,0.3)}
-.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
-.form-grid input,.form-grid select{padding:10px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,0.05);color:#fff;font-size:13px}
-.config-box{background:#000;padding:12px;border-radius:8px;font-family:monospace;font-size:11px;color:var(--green);word-break:break-all;direction:ltr;text-align:left;margin:8px 0;white-space:pre-wrap}
+body{font-family:sans-serif;background:#0a0a0a;color:#e0e0e0;padding:20px}
+.top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:20px}
+h2{color:#00e676}
+.btn{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold}
+.green{background:#00e676;color:#000}.red{background:#ff1744;color:#fff}.blue{background:#2979ff;color:#fff}.orange{background:#ff9100;color:#000}.gray{background:#333;color:#fff}
+.form-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:end}
+.form-row label{display:block;font-size:12px;color:#888;margin-bottom:2px}
+.form-row input,.form-row select{padding:8px;border-radius:6px;border:1px solid #333;background:#1a1a1a;color:#fff;font-size:13px}
+table{width:100%;border-collapse:collapse;margin-top:15px;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid #222;text-align:center}
+th{background:#1a1a1a;color:#00e676}
+.badge{padding:2px 8px;border-radius:10px;font-size:11px;font-weight:bold}
+.badge-g{background:#00e67633;color:#00e676}.badge-r{background:#ff174433;color:#ff1744}.badge-b{background:#2979ff33;color:#2979ff}
+.sub-box{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;margin:8px 0;display:none}
+.sub-box textarea{width:100%;background:#0a0a0a;color:#00e676;border:1px solid #333;border-radius:6px;padding:8px;font-size:11px;font-family:monospace;resize:vertical}
+.flash{padding:10px;border-radius:8px;margin-bottom:15px;font-size:13px}
+.flash.error{background:#ff174433;color:#ff1744;border:1px solid #ff174455}
+.tabs{display:flex;gap:5px;margin-bottom:15px}
+.tab{padding:8px 16px;border-radius:8px 8px 0 0;cursor:pointer;background:#1a1a1a;color:#888;border:1px solid #333;border-bottom:none}
+.tab.active{background:#0a0a0a;color:#00e676}
+.section{display:none;border:1px solid #333;border-radius:0 0 8px 8px;padding:15px}
+.section.active{display:block}
+.code{background:#0a0a0a;color:#00e676;padding:6px;border-radius:4px;font-family:monospace;font-size:11px;word-break:break-all;cursor:pointer}
 </style>
 </head>
 <body>
-<nav class="navbar">
-<h2>🛡️ {{ panel_name }}</h2>
-<div class="links">
-<a href="/" class="active">Dashboard</a>
-<a href="/settings">Settings</a>
-<a href="/logout">Logout</a>
-</div>
-</nav>
-<div class="container">
-<div class="stats">
-<div class="stat-card"><div class="num">{{ total }}</div><div class="label">کل کاربران</div></div>
-<div class="stat-card"><div class="num" style="color:var(--green)">{{ active }}</div><div class="label">فعال</div></div>
-<div class="stat-card"><div class="num" style="color:var(--red)">{{ total - active }}</div><div class="label">غیرفعال</div></div>
-<div class="stat-card"><div class="num" style="color:var(--orange)">{{ expired }}</div><div class="label">منقضی</div></div>
+<div class="top">
+<h2>{{ panel_name }}</h2>
+<a href="/settings" class="btn gray">⚙️ Settings</a>
 </div>
 
-<div class="section">
-<h3>➕ افزودن کاربر</h3>
-<form method="POST" action="/user/add">
-<div class="form-grid">
-<input type="text" name="username" placeholder="نام کاربری" required>
-<select name="protocol"><option value="vless">VLESS</option><option value="trojan">Trojan</option></select>
-<input type="number" name="traffic_limit" placeholder="ترافیک (GB)" value="50">
-<input type="number" name="expire_days" placeholder="روز" value="30">
-</div>
-<button type="submit" class="btn btn-primary">➕ افزودن</button>
-</form>
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% for cat, msg in messages %}
+<div class="flash {{ cat }}">{{ msg }}</div>
+{% endfor %}
+{% endwith %}
+
+<div class="tabs">
+<div class="tab active" onclick="showTab('users')">👥 کاربران</div>
+<div class="tab" onclick="showTab('inbounds')">🌍 سرورها (Inbounds)</div>
+<div class="tab" onclick="showTab('adduser')">➕ افزودن کاربر</div>
 </div>
 
-{% if config_to_show %}
-<div class="section">
-<h3>✅ کانفیگ کاربر جدید: {{ config_to_show.username }}</h3>
-<p style="color:#888;margin-bottom:8px">این لینک رو مستقیم کپی کن و توی V2RayN / V2RayNG / Hiddify / Nekobox باز کن:</p>
-<div class="config-box">{{ config_to_show.config }}</div>
-<p style="color:#888;font-size:12px;margin-top:8px">یا <a href="/config/{{ config_to_show.sub_token }}" style="color:var(--accent)">دانلود فایل کانفیگ</a></p>
-</div>
-{% endif %}
-
-<div class="section">
-<h3>👥 کاربران ({{ total }})</h3>
-<div style="overflow-x:auto">
+<!-- USERS -->
+<div class="section active" id="users">
+<h3>لیست کاربران ({{ users|length }})</h3>
 <table>
-<thead><tr><th>#</th><th>نام</th><th>پروتکل</th><th>ترافیک</th><th>انقضا</th><th>وضعیت</th><th>کانفیگ</th><th>عملیات</th></tr></thead>
-<tbody>
-{% for user in users %}
+<tr><th>#</th><th>نام</th><th>پروتکل</th><th>حجم</th><th>انقضا</th><th>سابلینک</th><th>وضعیت</th><th>عملیات</th></tr>
+{% for u in users %}
 <tr>
-<td>{{ loop.index }}</td>
-<td><strong>{{ user.username }}</strong></td>
-<td>{{ user.protocol|upper }}</td>
+<td>{{ u.id }}</td>
+<td style="text-align:right">{{ u.username }}</td>
+<td><span class="badge badge-b">{{ u.protocol|upper }}</span></td>
+<td>{{ (u.traffic_used/1073741824)|round(1) }}/{{ (u.traffic_limit/1073741824)|round(0)|int }} GB</td>
+<td>{{ u.expire_date }}</td>
+<td><a href="javascript:void(0)" onclick="copySub('{{ u.sub_token }}')" style="color:#00e676">📋 لینک ساب</a></td>
 <td>
-{% set usage_gb = (user.traffic_used / 1073741824)|round(1) %}
-{% set limit_gb = (user.traffic_limit / 1073741824)|round(0)|int %}
-{{ usage_gb }}/{{ limit_gb }} GB
+{% if u.enabled %}<span class="badge badge-g">فعال</span>
+{% else %}<span class="badge badge-r">غیرفعال</span>{% endif %}
 </td>
-<td>{{ user.expire_date or '∞' }}</td>
-<td>
-{% set is_expired = user.expire_date and user.expire_date < now.strftime('%Y-%m-%d') %}
-{% if not user.enabled %}<span class="badge disabled">غیرفعال</span>
-{% elif is_expired %}<span class="badge disabled">منقضی</span>
-{% else %}<span class="badge active">فعال</span>{% endif %}
-</td>
-<td>
-<a href="/config/{{ user.sub_token }}" class="btn btn-success" style="text-decoration:none;font-size:11px">📋 کپی کانفیگ</a>
-</td>
-<td>
-<form method="POST" action="/user/{{ user.id }}/toggle" style="display:inline">
-<button type="submit" class="btn btn-success">{% if user.enabled %}غیرفعال{% else %}فعال{% endif %}</button>
+<td style="display:flex;gap:4px;justify-content:center">
+<form method="POST" action="/user/toggle" style="display:inline">
+<input type="hidden" name="id" value="{{ u.id }}">
+<button type="submit" class="btn {% if u.enabled %}orange{% else %}green{% endif %}" style="padding:4px 8px;font-size:11px">{% if u.enabled %}غیرفعال{% else %}فعال{% endif %}</button>
 </form>
-<form method="POST" action="/user/{{ user.id }}/delete" style="display:inline" onsubmit="return confirm('حذف شود؟')">
-<button type="submit" class="btn btn-danger">حذف</button>
+<form method="POST" action="/user/delete" style="display:inline" onsubmit="return confirm('حذف شود؟')">
+<input type="hidden" name="id" value="{{ u.id }}">
+<button type="submit" class="btn red" style="padding:4px 8px;font-size:11px">🗑️</button>
 </form>
 </td>
 </tr>
 {% endfor %}
-{% if not users %}
-<tr><td colspan="8" style="text-align:center;color:#666;padding:40px">هنوز کاربری نیست</td></tr>
-{% endif %}
-</tbody>
+{% if not users %}<tr><td colspan="8">هنوز کاربری نیست</td></tr>{% endif %}
 </table>
 </div>
+
+<!-- INBOUNDS -->
+<div class="section" id="inbounds">
+<h3>سرورها (Inbounds)</h3>
+<table>
+<tr><th>#</th><th>Tag</th><th>پروتکل</th><th>آدرس سرور</th><th>پورت</th><th>امنیت</th><th>SNI</th><th>شبکه</th><th>مسیر</th><th>UUID</th><th>عملیات</th></tr>
+{% for ib in inbounds %}
+<tr>
+<td>{{ ib.id }}</td>
+<td>{{ ib.tag }}</td>
+<td><span class="badge badge-b">{{ ib.protocol|upper }}</span></td>
+<td style="font-size:11px">{{ ib.server_ip }}</td>
+<td>{{ ib.port }}</td>
+<td>{{ ib.security }}</td>
+<td style="font-size:11px">{{ ib.sni }}</td>
+<td>{{ ib.network }}</td>
+<td>{{ ib.path }}</td>
+<td style="font-size:10px">{{ ib.uuid[:8] }}...</td>
+<td>
+<form method="POST" action="/inbound/delete" style="display:inline" onsubmit="return confirm('حذف شود؟')">
+<input type="hidden" name="id" value="{{ ib.id }}">
+<button type="submit" class="btn red" style="padding:4px 8px;font-size:11px">🗑️</button>
+</form>
+</td>
+</tr>
+{% endfor %}
+{% if not inbounds %}<tr><td colspan="11">هنوز سروری اضافه نشده</td></tr>{% endif %}
+</table>
+
+<h3 style="margin-top:20px">➕ افزودن سرور</h3>
+<form method="POST" action="/inbound/add">
+<div class="form-row">
+<div><label>Tag</label><input name="tag" placeholder="germany-1" required></div>
+<div><label>پروتکل</label><select name="protocol"><option value="vless">VLESS</option><option value="trojan">Trojan</option></select></div>
+<div><label>آدرس سرور</label><input name="server_ip" placeholder="server.com" required></div>
+<div><label>پورت</label><input name="port" value="443" type="number"></div>
+</div>
+<div class="form-row">
+<div><label>امنیت</label><select name="security"><option value="tls">TLS</option><option value="reality">Reality</option><option value="none">None</option></select></div>
+<div><label>SNI</label><input name="sni" placeholder="sni.example.com"></div>
+<div><label>شبکه</label><select name="network"><option value="ws">WebSocket</option><option value="grpc">gRPC</option><option value="tcp">TCP</option><option value="h2">HTTP/2</option></select></div>
+<div><label>مسیر</label><input name="path" value="/vl"></div>
+</div>
+<div class="form-row">
+<div><label>Host</label><input name="host" placeholder="server.com"></div>
+<div><label>UUID (خالی = UUID کاربر)</label><input name="uuid" placeholder="خالی بذار"></div>
+<div><label>نام نمایشی</label><input name="remark" placeholder="🇩🇪 آلمان ۱"></div>
+</div>
+<button type="submit" class="btn green">➕ افزودن سرور</button>
+</form>
+</div>
+
+<!-- ADD USER -->
+<div class="section" id="adduser">
+<h3>➕ افزودن کاربر جدید</h3>
+<form method="POST" action="/user/add">
+<div class="form-row">
+<div><label>نام کاربری</label><input name="username" placeholder="ali_vpn" required></div>
+<div><label>پروتکل</label><select name="protocol"><option value="vless">VLESS</option><option value="trojan">Trojan</option></select></div>
+<div><label>حجم (GB)</label><input name="traffic_limit" value="50" type="number"></div>
+<div><label>روز</label><input name="expire_days" value="30" type="number"></div>
+</div>
+<button type="submit" class="btn green">➕ افزودن کاربر</button>
+</form>
+
+{% if config_username %}
+<div style="margin-top:20px;background:#1a1a1a;border:1px solid #00e676;border-radius:8px;padding:15px">
+<h3 style="color:#00e676">✅ کانفیگ کاربر: {{ config_username }}</h3>
+<div class="code" onclick="copyConfig(this)">{{ config_config }}</div>
+<div style="margin-top:10px">
+<strong>📎 لینک سابسکرایپشن (تمام سرورها):</strong>
+<div class="code" onclick="copySub('{{ config_sub_token }}')">{{ base_url }}/api/sub/{{ config_sub_token }}</div>
+<p style="font-size:11px;color:#888;margin-top:5px">این لینک رو مستقیم توی V2RayN / V2RayNG / Hiddify / Nekobox باز کن — تمام سرورهای فعال لود میشن</p>
 </div>
 </div>
+{% endif %}
+</div>
+
+<script>
+function showTab(t){document.querySelectorAll('.tab').forEach((e,i)=>{e.classList.toggle('active',e.textContent.includes(t==='users'?'کاربران':t==='inbounds'?'سرورها':'افزودن'))});document.querySelectorAll('.section').forEach(e=>e.classList.toggle('active',e.id===t))}
+function copyConfig(el){navigator.clipboard.writeText(el.textContent).then(()=>alert('کپی شد!'))}
+function copySub(token){navigator.clipboard.writeText('{{ base_url }}/api/sub/'+token).then(()=>alert('لینک ساب کپی شد!'))}
+</script>
 </body>
 </html>

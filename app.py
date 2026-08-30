@@ -2,7 +2,7 @@
 NighTi VPN Panel - Simple VPN Management Panel
 Features: User Management, Subscription Links, Config Generation
 """
-import os, json, uuid, hashlib, time, sqlite3, secrets
+import os, json, uuid, hashlib, time, sqlite3, secrets, urllib.parse
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session, Response
@@ -49,6 +49,21 @@ def init_db():
         CREATE TABLE IF NOT EXISTS settings (
             key TEXT PRIMARY KEY,
             value TEXT
+        );
+        CREATE TABLE IF NOT EXISTS inbounds (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tag TEXT UNIQUE NOT NULL,
+            protocol TEXT DEFAULT 'vless',
+            server_ip TEXT NOT NULL,
+            port INTEGER DEFAULT 443,
+            security TEXT DEFAULT 'tls',
+            sni TEXT DEFAULT '',
+            path TEXT DEFAULT '/vl',
+            network TEXT DEFAULT 'ws',
+            host TEXT DEFAULT '',
+            uuid TEXT DEFAULT '',
+            enabled INTEGER DEFAULT 1,
+            remark TEXT DEFAULT ''
         );
         CREATE TABLE IF NOT EXISTS logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -120,6 +135,7 @@ def logout():
 def dashboard():
     conn = get_db()
     users = conn.execute("SELECT * FROM users ORDER BY created_at DESC").fetchall()
+    inbounds = conn.execute("SELECT * FROM inbounds ORDER BY id").fetchall()
     total = len(users)
     active = sum(1 for u in users if u["enabled"])
     expired = sum(1 for u in users if u["expire_date"] and datetime.strptime(u["expire_date"], "%Y-%m-%d") < datetime.now())
@@ -135,7 +151,12 @@ def dashboard():
     return render_template("dashboard.html",
         users=users, total=total, active=active, expired=expired,
         total_traffic=total_traffic, panel_name=get_setting("panel_name"),
-        now=datetime.now(), config_to_show=config_to_show
+        now=datetime.now(), config_to_show=config_to_show,
+        inbounds=inbounds,
+        base_url=request.host_url.rstrip("/"),
+        config_username=request.args.get("config_username",""),
+        config_config=request.args.get("config_config",""),
+        config_sub_token=request.args.get("config_sub_token",""),
     )
 
 # ============ USER MANAGEMENT ============
@@ -328,3 +349,92 @@ if __name__ == "__main__":
 
 
 # Sun Aug 30 12:32:31 UTC 2026
+
+# ============ INBOUNDS MANAGEMENT ============
+@app.route("/api/inbounds")
+@login_required
+def api_inbounds():
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM inbounds ORDER BY id").fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route("/inbound/add", methods=["POST"])
+@login_required
+def add_inbound():
+    tag = request.form.get("tag","").strip()
+    protocol = request.form.get("protocol","vless")
+    server_ip = request.form.get("server_ip","").strip()
+    port = int(request.form.get("port",443))
+    security = request.form.get("security","tls")
+    sni = request.form.get("sni","").strip()
+    path = request.form.get("path","/vl").strip()
+    network = request.form.get("network","ws")
+    host = request.form.get("host",sni).strip()
+    uuid = request.form.get("uuid","").strip()
+    remark = request.form.get("remark","").strip()
+    if not tag or not server_ip:
+        flash("Tag and Server IP required","error")
+        return redirect(url_for("dashboard"))
+    conn = get_db()
+    try:
+        conn.execute(
+            "INSERT INTO inbounds (tag,protocol,server_ip,port,security,sni,path,network,host,uuid,remark) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (tag,protocol,server_ip,port,security,sni,path,network,host,uuid,remark)
+        )
+        conn.commit()
+        log_action("add_inbound", f"Added inbound: {tag}")
+    except sqlite3.IntegrityError:
+        flash("Tag already exists","error")
+    conn.close()
+    return redirect(url_for("dashboard"))
+
+@app.route("/inbound/delete", methods=["POST"])
+@login_required
+def delete_inbound():
+    inbound_id = request.form.get("id")
+    conn = get_db()
+    conn.execute("DELETE FROM inbounds WHERE id=?", (inbound_id,))
+    conn.commit()
+    conn.close()
+    log_action("delete_inbound", f"Deleted inbound #{inbound_id}")
+    return redirect(url_for("dashboard"))
+
+# ============ SUBSCRIPTION ENDPOINT ============
+@app.route("/api/sub/<sub_token>")
+def user_subscription(sub_token):
+    conn = get_db()
+    user = conn.execute("SELECT * FROM users WHERE sub_token=?", (sub_token,)).fetchone()
+    inbounds = conn.execute("SELECT * FROM inbounds WHERE enabled=1 ORDER BY id").fetchall()
+    conn.close()
+    if not user:
+        return "User not found", 404
+    if user["enabled"] == 0:
+        return "User disabled", 403
+    from datetime import datetime as dt
+    if user["expire_date"] and user["expire_date"] < dt.now().strftime("%Y-%m-%d"):
+        return "User expired", 403
+
+    uuid = user["uuid"]
+    username = user["username"]
+    lines = []
+    for ib in inbounds:
+        ib_uuid = ib["uuid"] or uuid
+        if ib["protocol"] == "vless":
+            line = f"vless://{ib_uuid}@{ib['server_ip']}:{ib['port']}?encryption=none&security={ib['security']}&sni={ib['sni']}&fp=chrome&type={ib['network']}&path={ib['path']}&host={ib['host']}#{urllib.parse.quote(ib['remark'] or ib['tag'])}"
+        elif ib["protocol"] == "trojan":
+            line = f"trojan://{ib_uuid}@{ib['server_ip']}:{ib['port']}?security={ib['security']}&type={ib['network']}&path={ib['path']}&host={ib['host']}&sni={ib['sni']}#{urllib.parse.quote(ib['remark'] or ib['tag'])}"
+        else:
+            continue
+        lines.append(line)
+
+    if not lines:
+        return "No inbounds available", 404
+    return "\n".join(lines), 200, {"Content-Type": "text/plain; charset=utf-8", "Content-Disposition": f'attachment; filename="{username}_sub.txt"'}
+
+# ============ SUB URL ON DASHBOARD ============
+@app.route("/api/sub/link/<sub_token>")
+@login_required
+def sub_link(sub_token):
+    base = request.host_url.rstrip("/")
+    return jsonify({"url": f"{base}/api/sub/{sub_token}"})
