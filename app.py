@@ -149,7 +149,7 @@ def add_user():
     if not username:
         return redirect(url_for("dashboard"))
     
-    user_uuid = str(uuid.uuid4())
+    user_uuid = os.environ.get("VPN_UUID", "732bd802-cc69-4a9f-a792-4da5b2b7118c")
     sub_token = secrets.token_urlsafe(16)
     expire_date = (datetime.now() + timedelta(days=expire_days)).strftime("%Y-%m-%d")
     traffic_limit = traffic_gb * 1024 * 1024 * 1024
